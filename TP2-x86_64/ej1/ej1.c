@@ -41,38 +41,31 @@ void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash)
 	}
 }
 
-char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash){
-	//Genera un nuevo hash concatenando el pasado por parámetro con todos los hashes
-	//de los nodos de la lista cuyos tipos coinciden con el pasado por parámetro
-	//y devuelve el nuevo hash.
-
-	string_proc_node* current_node = list->first;
-	char* new_hash = NULL;
-	while(current_node != NULL){
-		if(current_node->type == type){
-			if(new_hash == NULL){
-				new_hash = (char*)malloc(strlen(current_node->hash) + 1);
-				if(new_hash == NULL){
-					fprintf(stderr, "Error: No se pudo crear el nuevo hash\n");
-					return NULL;
-				}
-				strcpy(new_hash, current_node->hash);
-			}else{
-				char* temp = str_concat(new_hash, current_node->hash);
-				free(new_hash);
-				new_hash = temp;
-			}
-		}
-		current_node = current_node->next;
-	}
-	if(new_hash == NULL){
-		fprintf(stderr, "Error: No se encontraron hashes de tipo %d\n", type);
-		return NULL;
-	}
-	// Agregar el nuevo hash a la lista
-	string_proc_list_add_node(list, type, new_hash);
-	// Devolver el nuevo hash
-	return new_hash;
+char* string_proc_list_concat(string_proc_list* list, uint8_t type, char* prefix){
+    // Iniciar el nuevo hash con una copia del prefijo
+    char* new_hash = (char*)malloc(strlen(prefix) + 1);
+    if(new_hash == NULL){
+        fprintf(stderr, "Error: No se pudo crear el nuevo hash\n");
+        return NULL;
+    }
+    strcpy(new_hash, prefix);
+    
+    string_proc_node* current_node = list->first;
+    while(current_node != NULL){
+        if(current_node->type == type){
+            char* temp = str_concat(new_hash, current_node->hash);
+            free(new_hash);
+            new_hash = temp;
+        }
+        current_node = current_node->next;
+    }
+    if(new_hash == NULL){
+        fprintf(stderr, "Error: No se encontraron hashes de tipo %d\n", type);
+        return NULL;
+    }
+    // Agregar el nuevo hash a la lista
+    string_proc_list_add_node(list, type, new_hash);
+    return new_hash;
 }
 
 
