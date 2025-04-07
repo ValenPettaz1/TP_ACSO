@@ -19,6 +19,20 @@ extern str_concat
 
 
 string_proc_list_create_asm:
+    push    rbp
+    mov     rbp, rsp
+    sub     rsp, 16
+    mov     edi, 16
+    call    malloc
+    mov     QWORD PTR [rbp-8], rax
+    mov     rax, QWORD PTR [rbp-8]
+    mov     QWORD PTR [rax], 0
+    mov     rax, QWORD PTR [rbp-8]
+    mov     QWORD PTR [rax+8], 0
+    mov     rax, QWORD PTR [rbp-8]
+    leave
+    ret
+
 
 string_proc_node_create_asm:
 
