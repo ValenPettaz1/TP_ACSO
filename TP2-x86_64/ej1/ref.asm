@@ -76,8 +76,6 @@ string_proc_list_add_node(string_proc_list_t*, unsigned char, char*):
         nop
         leave
         ret
-.LC0:
-        .string "Error: No se encontraron hashes de tipo %d\n"
 string_proc_list_concat(string_proc_list_t*, unsigned char, char*):
         push    rbp
         mov     rbp, rsp
@@ -126,17 +124,6 @@ string_proc_list_concat(string_proc_list_t*, unsigned char, char*):
 .L10:
         cmp     QWORD PTR [rbp-16], 0
         jne     .L12
-        cmp     QWORD PTR [rbp-8], 0
-        jne     .L13
-        movzx   edx, BYTE PTR [rbp-44]
-        mov     rax, QWORD PTR stderr[rip]
-        mov     esi, OFFSET FLAT:.LC0
-        mov     rdi, rax
-        mov     eax, 0
-        call    fprintf
-        mov     eax, 0
-        jmp     .L14
-.L13:
         movzx   ecx, BYTE PTR [rbp-44]
         mov     rdx, QWORD PTR [rbp-8]
         mov     rax, QWORD PTR [rbp-40]
@@ -144,7 +131,6 @@ string_proc_list_concat(string_proc_list_t*, unsigned char, char*):
         mov     rdi, rax
         call    string_proc_list_add_node(string_proc_list_t*, unsigned char, char*)
         mov     rax, QWORD PTR [rbp-8]
-.L14:
         leave
         ret
 string_proc_list_destroy(string_proc_list_t*):
@@ -156,8 +142,8 @@ string_proc_list_destroy(string_proc_list_t*):
         mov     rax, QWORD PTR [rax]
         mov     QWORD PTR [rbp-8], rax
         mov     QWORD PTR [rbp-16], 0
-        jmp     .L16
-.L17:
+        jmp     .L15
+.L16:
         mov     rax, QWORD PTR [rbp-8]
         mov     rax, QWORD PTR [rax]
         mov     QWORD PTR [rbp-16], rax
@@ -166,9 +152,9 @@ string_proc_list_destroy(string_proc_list_t*):
         call    string_proc_node_destroy(string_proc_node_t*)
         mov     rax, QWORD PTR [rbp-16]
         mov     QWORD PTR [rbp-8], rax
-.L16:
+.L15:
         cmp     QWORD PTR [rbp-8], 0
-        jne     .L17
+        jne     .L16
         mov     rax, QWORD PTR [rbp-24]
         mov     QWORD PTR [rax], 0
         mov     rax, QWORD PTR [rbp-24]
@@ -235,9 +221,9 @@ str_concat(char*, char*):
         mov     rax, QWORD PTR [rbp-24]
         leave
         ret
-.LC1:
+.LC0:
         .string "List length: %d\n"
-.LC2:
+.LC1:
         .string "\tnode hash: %s | type: %d\n"
 string_proc_list_print(string_proc_list_t*, _IO_FILE*):
         push    rbp
@@ -249,42 +235,42 @@ string_proc_list_print(string_proc_list_t*, _IO_FILE*):
         mov     rax, QWORD PTR [rbp-24]
         mov     rax, QWORD PTR [rax]
         mov     QWORD PTR [rbp-16], rax
-        jmp     .L22
-.L23:
+        jmp     .L21
+.L22:
         add     DWORD PTR [rbp-4], 1
         mov     rax, QWORD PTR [rbp-16]
         mov     rax, QWORD PTR [rax]
         mov     QWORD PTR [rbp-16], rax
-.L22:
+.L21:
         cmp     QWORD PTR [rbp-16], 0
-        jne     .L23
+        jne     .L22
         mov     edx, DWORD PTR [rbp-4]
         mov     rax, QWORD PTR [rbp-32]
-        mov     esi, OFFSET FLAT:.LC1
+        mov     esi, OFFSET FLAT:.LC0
         mov     rdi, rax
         mov     eax, 0
         call    fprintf
         mov     rax, QWORD PTR [rbp-24]
         mov     rax, QWORD PTR [rax]
         mov     QWORD PTR [rbp-16], rax
-        jmp     .L24
-.L25:
+        jmp     .L23
+.L24:
         mov     rax, QWORD PTR [rbp-16]
         movzx   eax, BYTE PTR [rax+16]
         movzx   ecx, al
         mov     rax, QWORD PTR [rbp-16]
         mov     rdx, QWORD PTR [rax+24]
         mov     rax, QWORD PTR [rbp-32]
-        mov     esi, OFFSET FLAT:.LC2
+        mov     esi, OFFSET FLAT:.LC1
         mov     rdi, rax
         mov     eax, 0
         call    fprintf
         mov     rax, QWORD PTR [rbp-16]
         mov     rax, QWORD PTR [rax]
         mov     QWORD PTR [rbp-16], rax
-.L24:
+.L23:
         cmp     QWORD PTR [rbp-16], 0
-        jne     .L25
+        jne     .L24
         nop
         nop
         leave
