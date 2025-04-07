@@ -1,15 +1,78 @@
 #include "ej1.h"
 
 string_proc_list* string_proc_list_create(void){
+	//inicializar estructura de lista
+	string_proc_list* list = (string_proc_list*)malloc(sizeof(string_proc_list));
+	if(list == NULL){
+		fprintf(stderr, "Error: No se pudo crear la lista\n");
+		return NULL;
+	}
+	list->first = NULL;
+	list->last  = NULL;
+	return list;
 }
 
 string_proc_node* string_proc_node_create(uint8_t type, char* hash){
+	//Inicializa un nodo con el tipo y el hash dado.
+	//El nodo tiene que apuntar al hash pasado por parámetro (no hay que copiarlo).
+	string_proc_node* node = (string_proc_node*)malloc(sizeof(string_proc_node));
+	if(node == NULL){
+		fprintf(stderr, "Error: No se pudo crear el nodo\n");
+		return NULL;
+	}
+	node->type = type;
+	node->hash = hash;
+	node->next = NULL;
+	node->previous = NULL;
+	return node;
 }
 
 void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash){
+	string_proc_node* node = string_proc_node_create(type, hash);
+	if(list->first == NULL){
+		// Si la lista está vacía, el primer nodo es el nuevo nodo.
+		list->first = node;
+		list->last  = node;
+	}else{
+		// Si la lista no está vacía, agregamos el nuevo nodo al final.
+		list->last->next = node;
+		node->previous = list->last;
+		list->last = node;
+	}
 }
 
 char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash){
+	//Genera un nuevo hash concatenando el pasado por parámetro con todos los hashes
+	//de los nodos de la lista cuyos tipos coinciden con el pasado por parámetro
+	//y devuelve el nuevo hash.
+
+	string_proc_node* current_node = list->first;
+	char* new_hash = NULL;
+	while(current_node != NULL){
+		if(current_node->type == type){
+			if(new_hash == NULL){
+				new_hash = (char*)malloc(strlen(current_node->hash) + 1);
+				if(new_hash == NULL){
+					fprintf(stderr, "Error: No se pudo crear el nuevo hash\n");
+					return NULL;
+				}
+				strcpy(new_hash, current_node->hash);
+			}else{
+				char* temp = str_concat(new_hash, current_node->hash);
+				free(new_hash);
+				new_hash = temp;
+			}
+		}
+		current_node = current_node->next;
+	}
+	if(new_hash == NULL){
+		fprintf(stderr, "Error: No se encontraron hashes de tipo %d\n", type);
+		return NULL;
+	}
+	// Agregar el nuevo hash a la lista
+	string_proc_list_add_node(list, type, new_hash);
+	// Devolver el nuevo hash
+	return new_hash;
 }
 
 
