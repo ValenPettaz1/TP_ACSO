@@ -141,10 +141,10 @@ string_proc_list_concat_asm:
         ret
 
 .L11:
-        mov     rax, QWORD PTR [rbp-16]
-        mov     rax, QWORD PTR [rax]
-        mov     QWORD PTR [rbp-16], rax
-        
+        mov     rax, QWORD  [rbp-16]
+        mov     rax, QWORD  [rax]
+        mov     QWORD  [rbp-16], rax
+
 .L12:                          
         mov     rax, QWORD  [rbp-16]
         movzx   eax, BYTE  [rax+16]
