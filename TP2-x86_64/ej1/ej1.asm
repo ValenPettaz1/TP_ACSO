@@ -30,7 +30,8 @@ string_proc_list_create_asm:
     mov     rax, QWORD PTR [rbp-8]
     mov     QWORD PTR [rax+8], 0
     mov     rax, QWORD PTR [rbp-8]
-    leave
+    mov     rsp, rbp
+    pop     rbp
     ret
 
 
@@ -55,10 +56,87 @@ string_proc_node_create_asm:
     mov     rax, QWORD PTR [rbp-8]
     mov     QWORD PTR [rax+8], 0
     mov     rax, QWORD PTR [rbp-8]
-    leave
+    mov     rsp, rbp
+    pop     rbp
     ret
 
 string_proc_list_add_node_asm:
+    push    rbp
+    mov     rbp, rsp
+    sub     rsp, 48
+    mov     QWORD PTR [rbp-24], rdi
+    mov     eax, esi
+    mov     QWORD PTR [rbp-40], rdx
+    mov     BYTE PTR [rbp-28], al
+    movzx   eax, BYTE PTR [rbp-28]
+    mov     rdx, QWORD PTR [rbp-40]
+    mov     rsi, rdx
+    mov     edi, eax
+    call    string_proc_node_create(unsigned char, char*)
+    mov     QWORD PTR [rbp-8], rax
+    mov     rax, QWORD PTR [rbp-24]
+    mov     rax, QWORD PTR [rax]
+    test    rax, rax
+    jne     .L6
+    mov     rax, QWORD PTR [rbp-24]
+    mov     rdx, QWORD PTR [rbp-8]
+    mov     QWORD PTR [rax], rdx
+    mov     rax, QWORD PTR [rbp-24]
+    mov     rdx, QWORD PTR [rbp-8]
+    mov     QWORD PTR [rax+8], rdx
+    jmp     .L8
+.L6:
+        mov     rax, QWORD PTR [rbp-24]
+        mov     rax, QWORD PTR [rax+8]
+        mov     rdx, QWORD PTR [rbp-8]
+        mov     QWORD PTR [rax], rdx
+        mov     rax, QWORD PTR [rbp-24]
+        mov     rdx, QWORD PTR [rax+8]
+        mov     rax, QWORD PTR [rbp-8]
+        mov     QWORD PTR [rax+8], rdx
+        mov     rax, QWORD PTR [rbp-24]
+        mov     rdx, QWORD PTR [rbp-8]
+        mov     QWORD PTR [rax+8], rdx
+.L8:
+        nop
+        leave
+        ret
 
 string_proc_list_concat_asm:
+        push    rbp
+        mov     rbp, rsp
+        sub     rsp, 64
+        mov     QWORD PTR [rbp-40], rdi
+        mov     eax, esi
+        mov     QWORD PTR [rbp-56], rdx
+        mov     BYTE PTR [rbp-44], al
+        mov     rax, QWORD PTR [rbp-56]
+        mov     rdi, rax
+        call    strlen
+        add     rax, 1
+        mov     rdi, rax
+        call    malloc
+        mov     QWORD PTR [rbp-8], rax
+        mov     rdx, QWORD PTR [rbp-56]
+        mov     rax, QWORD PTR [rbp-8]
+        mov     rsi, rdx
+        mov     rdi, rax
+        call    strcpy
+        mov     rax, QWORD PTR [rbp-40]
+        mov     rax, QWORD PTR [rax]
+        mov     QWORD PTR [rbp-16], rax
+        jmp     .L10
+
+.L10:
+        cmp     QWORD PTR [rbp-16], 0
+        jne     .L12
+        movzx   ecx, BYTE PTR [rbp-44]
+        mov     rdx, QWORD PTR [rbp-8]
+        mov     rax, QWORD PTR [rbp-40]
+        mov     esi, ecx
+        mov     rdi, rax
+        call    string_proc_list_add_node(string_proc_list_t*, unsigned char, char*)
+        mov     rax, QWORD PTR [rbp-8]
+        leave
+        ret
 
