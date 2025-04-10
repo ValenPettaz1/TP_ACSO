@@ -72,7 +72,7 @@ string_proc_list_add_node_asm:
     mov     rdx, QWORD  [rbp-40]
     mov     rsi, rdx
     mov     edi, eax
-    call    string_proc_node_create(unsigned char, char*)
+    call    string_proc_node_create_asm
     mov     QWORD  [rbp-8], rax
     mov     rax, QWORD  [rbp-24]
     mov     rax, QWORD  [rax]
@@ -135,7 +135,7 @@ string_proc_list_concat_asm:
         mov     rax, QWORD  [rbp-40]
         mov     esi, ecx
         mov     rdi, rax
-        call    string_proc_list_add_node(string_proc_list_t*, unsigned char, char*)
+        call    string_proc_list_add_node_asm
         mov     rax, QWORD  [rbp-8]
         leave
         ret
