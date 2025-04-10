@@ -51,7 +51,7 @@ string_proc_list_add_node_asm:
     movzx rsi, sil
     mov rdi, rsi               ; type
     mov rsi, rdx               ; hash
-    call string_proc_node_create
+    call string_proc_node_create_asm
     mov rcx, rdi               ; list
     mov rdx, rax               ; node
 
@@ -115,7 +115,7 @@ string_proc_list_concat_asm:
     mov rdi, r8                ; list
     mov sil, r9b               ; type
     mov rdx, rbx               ; new_hash
-    call string_proc_list_add_node
+    call string_proc_list_add_node_asm
     mov rax, rbx               ; return new_hash
     ret
 
