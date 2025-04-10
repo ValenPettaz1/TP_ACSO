@@ -155,7 +155,7 @@ string_proc_list_concat_asm:
         mov     rax, QWORD  [rbp-8]
         mov     rsi, rdx
         mov     rdi, rax
-        call    str_concat(char*, char*)
+        call    str_concat
         mov     QWORD  [rbp-24], rax
         mov     rax, QWORD  [rbp-8]
         mov     rdi, rax
