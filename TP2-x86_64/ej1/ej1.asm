@@ -6,10 +6,10 @@
 section .data
 
 section .text
-    global string_proc_list_create
-    global string_proc_node_create
-    global string_proc_list_add_node
-    global string_proc_list_concat
+    global string_proc_list_create_asm
+    global string_proc_node_create_asm
+    global string_proc_list_add_node_asm
+    global string_proc_list_concat_asm
 
     extern malloc
     extern free
@@ -20,7 +20,7 @@ section .text
 ; ----------------------------------------
 ; string_proc_list* string_proc_list_create()
 ; ----------------------------------------
-string_proc_list_create:
+string_proc_list_create_asm:
     mov rdi, 16                ; sizeof(string_proc_list)
     call malloc
     mov qword [rax], 0         ; list->first = NULL
@@ -31,7 +31,7 @@ string_proc_list_create:
 ; string_proc_node* string_proc_node_create(uint8_t type, char* hash)
 ; rdi = type, rsi = hash
 ; ----------------------------------------
-string_proc_node_create:
+string_proc_node_create_asm:
     push rbx
     mov rbx, rdi               ; guardar type
     mov rdi, 32                ; sizeof(string_proc_node)
@@ -47,11 +47,11 @@ string_proc_node_create:
 ; void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash)
 ; rdi = list, sil = type, rdx = hash
 ; ----------------------------------------
-string_proc_list_add_node:
+string_proc_list_add_node_asm:
     movzx rsi, sil             ; pasar type a rsi
     mov rdi, rsi               ; rdi = type
     mov rsi, rdx               ; rsi = hash
-    call string_proc_node_create
+    call string_proc_node_create_asm
     mov rcx, rdi               ; rcx = list
     mov rdx, rax               ; rdx = node
 
@@ -75,7 +75,7 @@ string_proc_list_add_node:
 ; char* string_proc_list_concat(string_proc_list* list, uint8_t type, char* prefix)
 ; rdi = list, sil = type, rdx = prefix
 ; ----------------------------------------
-string_proc_list_concat:
+string_proc_list_concat_asm:
     ; calcular tamaño del nuevo hash
     mov rdi, rdx
     call strlen
@@ -115,7 +115,7 @@ string_proc_list_concat:
     mov rdi, r8                ; list
     mov sil, r9b               ; type
     mov rdx, rbx               ; new_hash
-    call string_proc_list_add_node
+    call string_proc_list_add_node_asm
     mov rax, rbx               ; return new_hash
     ret
 
