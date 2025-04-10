@@ -6,10 +6,10 @@
 section .data
 
 section .text
-    global string_proc_list_create
-    global string_proc_node_create
-    global string_proc_list_add_node
-    global string_proc_list_concat
+    global string_proc_list_create_asm
+    global string_proc_node_create_asm
+    global string_proc_list_add_node_asm
+    global string_proc_list_concat_asm
 
     extern malloc
     extern free
