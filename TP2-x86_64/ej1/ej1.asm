@@ -76,48 +76,70 @@ string_proc_list_add_node_asm:
 ; rdi = list, sil = type, rdx = prefix
 ; ----------------------------------------
 string_proc_list_concat_asm:
-    ; calcular tamaño del nuevo hash
-    mov rdi, rdx
+    push rbx
+    push r12
+    push r13
+    push r14
+    push r15
+
+    mov r12, rdi          ; r12 = list
+    mov r13b, sil         ; r13b = type
+    mov r14, rdx          ; r14 = prefix
+
+    ; new_hash = malloc(strlen(prefix) + 1)
+    mov rdi, r14
     call strlen
     add rax, 1
     mov rdi, rax
     call malloc
+    mov rbx, rax          ; rbx = new_hash
 
-    mov rbx, rax               ; new_hash
+    ; strcpy(new_hash, prefix)
     mov rdi, rbx
-    mov rsi, rdx
+    mov rsi, r14
     call strcpy
 
-    mov r8, rdi                ; r8 = list
-    mov r9b, sil               ; r9b = type
-    mov r10, [r8]              ; r10 = current_node = list->first
+    ; current_node = list->first
+    mov r15, [r12]        ; r15 = current_node
 
 .loop_concat:
-    test r10, r10
+    test r15, r15
     je .end_concat
 
-    mov al, [r10]              ; current_node->type
-    cmp al, r9b
+    mov al, [r15]         ; current_node->type
+    cmp al, r13b
     jne .next_node
 
-    mov rdi, rbx               ; rdi = new_hash
-    mov rsi, [r10 + 8]         ; rsi = current_node->hash
+    ; concatenar new_hash con current_node->hash
+    mov rdi, rbx
+    mov rsi, [r15 + 8]    ; current_node->hash
     call str_concat
+
+    ; liberar old new_hash
     mov rdi, rbx
     call free
-    mov rbx, rax               ; new_hash = result
+
+    ; actualizar new_hash
+    mov rbx, rax
 
 .next_node:
-    mov r10, [r10 + 16]        ; current_node = current_node->next
+    mov r15, [r15 + 16]   ; current_node = current_node->next
     jmp .loop_concat
 
 .end_concat:
-    mov rdi, r8                ; list
-    mov sil, r9b               ; type
-    mov rdx, rbx               ; new_hash
-    call string_proc_list_add_node_asm
-    mov rax, rbx               ; return new_hash
+    ; agregar a la lista
+    mov rdi, r12
+    mov sil, r13b
+    mov rdx, rbx
+    call string_proc_list_add_node
+
+    mov rax, rbx
+
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop rbx
     ret
 
-section .data
-; No se usan mensajes en esta versión
+
