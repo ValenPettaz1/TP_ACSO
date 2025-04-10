@@ -131,7 +131,7 @@ string_proc_list_concat_asm:
     mov rdi, r12
     mov sil, r13b
     mov rdx, rbx
-    call string_proc_list_add_node
+    call string_proc_list_add_node_asm
 
     mov rax, rbx
 
