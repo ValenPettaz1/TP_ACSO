@@ -16,7 +16,8 @@ global string_proc_list_concat_asm
 extern malloc
 extern free
 extern str_concat
-
+extern strlen       ; Declarar strlen como externa
+extern strcpy       ; Declarar strcpy como externa
 
 string_proc_list_create_asm:
     push    rbp
@@ -33,7 +34,6 @@ string_proc_list_create_asm:
     mov     rsp, rbp
     pop     rbp
     ret
-
 
 string_proc_node_create_asm:
     push    rbp
@@ -140,3 +140,25 @@ string_proc_list_concat_asm:
         leave
         ret
 
+.L11:
+        mov     rax, QWORD PTR [rbp-16]
+        mov     rax, QWORD PTR [rax]
+        mov     QWORD PTR [rbp-16], rax
+        
+.L12:                          
+        mov     rax, QWORD  [rbp-16]
+        movzx   eax, BYTE  [rax+16]
+        cmp     BYTE  [rbp-44], al
+        jne     .L11
+        mov     rax, QWORD  [rbp-16]
+        mov     rdx, QWORD  [rax+24]
+        mov     rax, QWORD  [rbp-8]
+        mov     rsi, rdx
+        mov     rdi, rax
+        call    str_concat(char*, char*)
+        mov     QWORD  [rbp-24], rax
+        mov     rax, QWORD  [rbp-8]
+        mov     rdi, rax
+        call    free
+        mov     rax, QWORD  [rbp-24]
+        mov     QWORD  [rbp-8], rax
