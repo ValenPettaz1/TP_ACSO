@@ -16,9 +16,7 @@ section .text
     extern strcpy
     extern str_concat
 
-; ----------------------------------------
-; string_proc_list* string_proc_list_create()
-; ----------------------------------------
+
 string_proc_list_create_asm:
         push    rbp
         mov     rbp, rsp
@@ -33,7 +31,7 @@ string_proc_list_create_asm:
         mov     rax, QWORD [rbp-8]
         mov     rsp, rbp
         pop     rbp
-        ret   ; ---------------------------
+        ret   
 
 string_proc_node_create_asm:
         push    rbp
@@ -60,10 +58,7 @@ string_proc_node_create_asm:
         pop     rbp
         ret
 
-; ----------------------------------------
-; void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash)
-; rdi = list, sil = type, rdx = hash
-; ----------------------------------------
+
 string_proc_list_add_node_asm:
         push    rbp
         mov     rbp, rsp
@@ -81,15 +76,15 @@ string_proc_list_add_node_asm:
         mov     rax, QWORD [rbp-24]
         mov     rax, QWORD [rax]
         test    rax, rax
-        jne     .L6
+        jne     nodo_existente
         mov     rax, QWORD [rbp-24]
         mov     rdx, QWORD [rbp-8]
         mov     QWORD [rax], rdx
         mov     rax, QWORD [rbp-24]
         mov     rdx, QWORD [rbp-8]
         mov     QWORD [rax+8], rdx
-        jmp     .L8
-.L6:
+        jmp     fin_agregar
+nodo_existente:
         mov     rax, QWORD [rbp-24]
         mov     rax, QWORD [rax+8]
         mov     rdx, QWORD [rbp-8]
@@ -101,16 +96,13 @@ string_proc_list_add_node_asm:
         mov     rax, QWORD [rbp-24]
         mov     rdx, QWORD [rbp-8]
         mov     QWORD [rax+8], rdx
-.L8:
+fin_agregar:
         nop
         mov     rsp, rbp
         pop     rbp
         ret
 
-; ----------------------------------------
-; char* string_proc_list_concat(string_proc_list* list, uint8_t type, char* prefix)
-; rdi = list, sil = type, rdx = prefix
-; ----------------------------------------
+
 string_proc_list_concat_asm:
         push    rbp
         mov     rbp, rsp
@@ -134,12 +126,12 @@ string_proc_list_concat_asm:
         mov     rax, QWORD [rbp-40]
         mov     rax, QWORD [rax]
         mov     QWORD [rbp-16], rax
-        jmp     .L10
-.L12:
+        jmp     loop_fin
+loop_cuerpo:
         mov     rax, QWORD [rbp-16]
         movzx   eax, BYTE [rax+16]
         cmp     BYTE [rbp-44], al
-        jne     .L11
+        jne     saltar_concat
         mov     rax, QWORD [rbp-16]
         mov     rdx, QWORD [rax+24]
         mov     rax, QWORD [rbp-8]
@@ -152,13 +144,13 @@ string_proc_list_concat_asm:
         call    free
         mov     rax, QWORD [rbp-24]
         mov     QWORD [rbp-8], rax
-.L11:
+saltar_concat:
         mov     rax, QWORD [rbp-16]
         mov     rax, QWORD [rax]
         mov     QWORD [rbp-16], rax
-.L10:
+loop_fin:
         cmp     QWORD [rbp-16], 0
-        jne     .L12
+        jne     loop_cuerpo
         movzx   ecx, BYTE [rbp-44]
         mov     rdx, QWORD [rbp-8]
         mov     rax, QWORD [rbp-40]
