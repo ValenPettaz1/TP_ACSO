@@ -1,4 +1,4 @@
-; /** defines bool y puntero **/
+
 %define NULL 0
 %define TRUE 1
 %define FALSE 0
@@ -33,7 +33,8 @@ string_proc_list_create_asm:
         mov     QWORD  [rax+8], 0
         mov     rax, QWORD  [rbp-8]
         leave
-        ret---------------------------
+        ret   ; ---------------------------
+
 string_proc_node_create_asm:
         push    rbp
         mov     rbp, rsp
@@ -74,7 +75,7 @@ string_proc_list_add_node_asm:
         mov     rdx, QWORD  [rbp-40]
         mov     rsi, rdx
         mov     edi, eax
-        call    string_proc_node_create(unsigned char, char*)
+        call    string_proc_node_create_asm
         mov     QWORD  [rbp-8], rax
         mov     rax, QWORD  [rbp-24]
         mov     rax, QWORD  [rax]
@@ -142,7 +143,7 @@ string_proc_list_concat_asm:
         mov     rax, QWORD  [rbp-8]
         mov     rsi, rdx
         mov     rdi, rax
-        call    str_concat(char*, char*)
+        call    str_concat
         mov     QWORD  [rbp-24], rax
         mov     rax, QWORD  [rbp-8]
         mov     rdi, rax
@@ -161,9 +162,7 @@ string_proc_list_concat_asm:
         mov     rax, QWORD  [rbp-40]
         mov     esi, ecx
         mov     rdi, rax
-        call    string_proc_list_add_node(string_proc_list_t*, unsigned char, char*)
+        call    string_proc_list_add_node_asm
         mov     rax, QWORD  [rbp-8]
         leave
         ret
-
-
