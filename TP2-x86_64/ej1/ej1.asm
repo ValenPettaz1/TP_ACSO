@@ -21,125 +21,149 @@ section .text
 ; string_proc_list* string_proc_list_create()
 ; ----------------------------------------
 string_proc_list_create_asm:
-    mov rdi, 16                ; sizeof(string_proc_list)
-    call malloc
-    mov qword [rax], 0         ; list->first = NULL
-    mov qword [rax + 8], 0     ; list->last = NULL
-    ret
-
-; ----------------------------------------
-; string_proc_node* string_proc_node_create(uint8_t type, char* hash)
-; rdi = type, rsi = hash
-; ----------------------------------------
+        push    rbp
+        mov     rbp, rsp
+        sub     rsp, 16
+        mov     edi, 16
+        call    malloc
+        mov     QWORD  [rbp-8], rax
+        mov     rax, QWORD  [rbp-8]
+        mov     QWORD  [rax], 0
+        mov     rax, QWORD  [rbp-8]
+        mov     QWORD  [rax+8], 0
+        mov     rax, QWORD  [rbp-8]
+        leave
+        ret---------------------------
 string_proc_node_create_asm:
-    push rbx
-    mov rbx, rdi               ; guardar type
-    mov rdi, 32                ; sizeof(string_proc_node)
-    call malloc
-    mov byte  [rax], bl        ; node->type = type
-    mov qword [rax + 8], rsi   ; node->hash = hash
-    mov qword [rax + 16], 0    ; node->next = NULL
-    mov qword [rax + 24], 0    ; node->previous = NULL
-    pop rbx
-    ret
+        push    rbp
+        mov     rbp, rsp
+        sub     rsp, 32
+        mov     eax, edi
+        mov     QWORD  [rbp-32], rsi
+        mov     BYTE  [rbp-20], al
+        mov     edi, 32
+        call    malloc
+        mov     QWORD  [rbp-8], rax
+        mov     rax, QWORD  [rbp-8]
+        movzx   edx, BYTE  [rbp-20]
+        mov     BYTE  [rax+16], dl
+        mov     rax, QWORD  [rbp-8]
+        mov     rdx, QWORD  [rbp-32]
+        mov     QWORD  [rax+24], rdx
+        mov     rax, QWORD  [rbp-8]
+        mov     QWORD  [rax], 0
+        mov     rax, QWORD  [rbp-8]
+        mov     QWORD  [rax+8], 0
+        mov     rax, QWORD  [rbp-8]
+        leave
+        ret
 
 ; ----------------------------------------
 ; void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash)
 ; rdi = list, sil = type, rdx = hash
 ; ----------------------------------------
 string_proc_list_add_node_asm:
-    movzx rsi, sil             ; pasar type a rsi
-    mov rdi, rsi               ; rdi = type
-    mov rsi, rdx               ; rsi = hash
-    call string_proc_node_create_asm
-    mov rcx, rdi               ; rcx = list
-    mov rdx, rax               ; rdx = node
-
-    mov rax, [rcx]             ; rax = list->first
-    test rax, rax
-    je .empty_list
-
-    ; lista no vacía
-    mov rax, [rcx + 8]         ; rax = list->last
-    mov [rax + 16], rdx        ; last->next = node
-    mov [rdx + 24], rax        ; node->previous = last
-    mov [rcx + 8], rdx         ; list->last = node
-    ret
-
-.empty_list:
-    mov [rcx], rdx             ; list->first = node
-    mov [rcx + 8], rdx         ; list->last = node
-    ret
+        push    rbp
+        mov     rbp, rsp
+        sub     rsp, 48
+        mov     QWORD  [rbp-24], rdi
+        mov     eax, esi
+        mov     QWORD  [rbp-40], rdx
+        mov     BYTE  [rbp-28], al
+        movzx   eax, BYTE  [rbp-28]
+        mov     rdx, QWORD  [rbp-40]
+        mov     rsi, rdx
+        mov     edi, eax
+        call    string_proc_node_create(unsigned char, char*)
+        mov     QWORD  [rbp-8], rax
+        mov     rax, QWORD  [rbp-24]
+        mov     rax, QWORD  [rax]
+        test    rax, rax
+        jne     .L6
+        mov     rax, QWORD  [rbp-24]
+        mov     rdx, QWORD  [rbp-8]
+        mov     QWORD  [rax], rdx
+        mov     rax, QWORD  [rbp-24]
+        mov     rdx, QWORD  [rbp-8]
+        mov     QWORD  [rax+8], rdx
+        jmp     .L8
+.L6:
+        mov     rax, QWORD  [rbp-24]
+        mov     rax, QWORD  [rax+8]
+        mov     rdx, QWORD  [rbp-8]
+        mov     QWORD  [rax], rdx
+        mov     rax, QWORD  [rbp-24]
+        mov     rdx, QWORD  [rax+8]
+        mov     rax, QWORD  [rbp-8]
+        mov     QWORD  [rax+8], rdx
+        mov     rax, QWORD  [rbp-24]
+        mov     rdx, QWORD  [rbp-8]
+        mov     QWORD  [rax+8], rdx
+.L8:
+        nop
+        leave
+        ret
 
 ; ----------------------------------------
 ; char* string_proc_list_concat(string_proc_list* list, uint8_t type, char* prefix)
 ; rdi = list, sil = type, rdx = prefix
 ; ----------------------------------------
 string_proc_list_concat_asm:
-    push rbx
-    push r12
-    push r13
-    push r14
-    push r15
-
-    mov r12, rdi          ; r12 = list
-    mov r13b, sil         ; r13b = type
-    mov r14, rdx          ; r14 = prefix
-
-    ; new_hash = malloc(strlen(prefix) + 1)
-    mov rdi, r14
-    call strlen
-    add rax, 1
-    mov rdi, rax
-    call malloc
-    mov rbx, rax          ; rbx = new_hash
-
-    ; strcpy(new_hash, prefix)
-    mov rdi, rbx
-    mov rsi, r14
-    call strcpy
-
-    ; current_node = list->first
-    mov r15, [r12]        ; r15 = current_node
-
-.loop_concat:
-    test r15, r15
-    je .end_concat
-
-    mov al, [r15]         ; current_node->type
-    cmp al, r13b
-    jne .next_node
-
-    ; concatenar new_hash con current_node->hash
-    mov rdi, rbx
-    mov rsi, [r15 + 8]    ; current_node->hash
-    call str_concat
-
-    ; liberar old new_hash
-    mov rdi, rbx
-    call free
-
-    ; actualizar new_hash
-    mov rbx, rax
-
-.next_node:
-    mov r15, [r15 + 16]   ; current_node = current_node->next
-    jmp .loop_concat
-
-.end_concat:
-    ; agregar a la lista
-    mov rdi, r12
-    mov sil, r13b
-    mov rdx, rbx
-    call string_proc_list_add_node_asm
-
-    mov rax, rbx
-
-    pop r15
-    pop r14
-    pop r13
-    pop r12
-    pop rbx
-    ret
+        push    rbp
+        mov     rbp, rsp
+        sub     rsp, 64
+        mov     QWORD  [rbp-40], rdi
+        mov     eax, esi
+        mov     QWORD  [rbp-56], rdx
+        mov     BYTE  [rbp-44], al
+        mov     rax, QWORD  [rbp-56]
+        mov     rdi, rax
+        call    strlen
+        add     rax, 1
+        mov     rdi, rax
+        call    malloc
+        mov     QWORD  [rbp-8], rax
+        mov     rdx, QWORD  [rbp-56]
+        mov     rax, QWORD  [rbp-8]
+        mov     rsi, rdx
+        mov     rdi, rax
+        call    strcpy
+        mov     rax, QWORD  [rbp-40]
+        mov     rax, QWORD  [rax]
+        mov     QWORD  [rbp-16], rax
+        jmp     .L10
+.L12:
+        mov     rax, QWORD  [rbp-16]
+        movzx   eax, BYTE  [rax+16]
+        cmp     BYTE  [rbp-44], al
+        jne     .L11
+        mov     rax, QWORD  [rbp-16]
+        mov     rdx, QWORD  [rax+24]
+        mov     rax, QWORD  [rbp-8]
+        mov     rsi, rdx
+        mov     rdi, rax
+        call    str_concat(char*, char*)
+        mov     QWORD  [rbp-24], rax
+        mov     rax, QWORD  [rbp-8]
+        mov     rdi, rax
+        call    free
+        mov     rax, QWORD  [rbp-24]
+        mov     QWORD  [rbp-8], rax
+.L11:
+        mov     rax, QWORD  [rbp-16]
+        mov     rax, QWORD  [rax]
+        mov     QWORD  [rbp-16], rax
+.L10:
+        cmp     QWORD  [rbp-16], 0
+        jne     .L12
+        movzx   ecx, BYTE  [rbp-44]
+        mov     rdx, QWORD  [rbp-8]
+        mov     rax, QWORD  [rbp-40]
+        mov     esi, ecx
+        mov     rdi, rax
+        call    string_proc_list_add_node(string_proc_list_t*, unsigned char, char*)
+        mov     rax, QWORD  [rbp-8]
+        leave
+        ret
 
 
