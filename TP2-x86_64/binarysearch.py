@@ -7,7 +7,6 @@ def cuenta_recursiva(arr, target, low, high, counter):
         return "BOMB!"
     
     # Cálculo del punto medio como en el assembly: ((low XOR high) >> 1) + (low AND high)
-    # Es equivalente matemáticamente a (low + high) // 2 pero evita overflow
     mid = ((low ^ high) >> 1) + (low & high)
     
     # Comparación de strings (similar a lo que haría el strcasecmp)
@@ -33,29 +32,23 @@ def main():
         print("El archivo 'palabras.txt' no se encontró.")
         return
 
-    # Buscamos palabras que requieran entre 7 y 11 pasos
-    soluciones_validas = []
+    # Se busca la palabra válida de menor longitud que requiera entre 7 y 11 pasos
+    solucion_valida = None  # Guardará la tupla (steps, word)
     
     for word in words:
-        counter = [0]  # Lista para poder modificar el contador por referencia
+        counter = [0]
         steps = cuenta_recursiva(words, word, 0, len(words) - 1, counter)
         
         if isinstance(steps, str):
             continue  # Salta palabras que harían explotar la bomba
         
-        # La bomba requiere que steps > 6
-        if 6 < steps <= 11:
-            soluciones_validas.append((steps, word))
-    
-    # Ordenamos por número de pasos
-    soluciones_validas.sort()
-    
-    if soluciones_validas:
-        print("Entradas válidas para desactivar la bomba:")
-        for steps, word in soluciones_validas:
-            print(f"{steps} {word}")
-        print("\nInput recomendado para fase 3:")
-        print(f"{soluciones_validas[0][0]} {soluciones_validas[0][1]}")
+        if 6 < steps <= 11:  # Condición para ser válida
+            if solucion_valida is None or len(word) < len(solucion_valida[1]):
+                solucion_valida = (steps, word)
+
+    if solucion_valida:
+        print("Entrada válida para desactivar la bomba:")
+        print(f"{solucion_valida[0]} {solucion_valida[1]}")
     else:
         print("No se encontraron soluciones válidas.")
 
