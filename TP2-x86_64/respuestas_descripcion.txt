@@ -1,0 +1,64 @@
+﻿Alumno: PETTAZI, Valentino
+Mail: vpettazi@udesa.edu.ar
+
+
+FASE 1
+
+
+El código de la fase 1 reserva 8 bytes en el stack, carga el registro RSI la dirección de un string constante (la clave) y luego la compara por igualdad con el registro RDI, que contiene el parámetro ingresado por el usuario. 
+
+
+Haciendo DUMP de los registros al momento de cargar RSI con la clave, se extrae el siguiente string:
+
+
+
+Clave 1: “Cada uno es como Dios le hizo, y aun peor muchas veces.”
+
+
+
+
+FASE 2
+Este fragmento de phase_2 procesa la entrada del usuario, la divide en “tokens” (subcadenas) y luego verifica que se cumpla una condición aritmética sobre los valores convertidos. En esencia, la función espera que la cadena de entrada contenga al menos tres números (en formato de texto) y luego realiza el siguiente procedimiento:
+Se copia el string de entrada en RBP, luego se llama a una función de parsing para obtener el primer token, guardando el resultado en RBX, luego se guarda el segundo token en R12, si alguno de estos tokens es nulo explota la bomba. La función strtol convierte los números y sobreescribe cada registro: RBP, RBX y R12.
+Se valida la condición lógica que debe cumplir la entrada realizando una operación XOR entre el primer número (almacenado en RBP) y el segundo (en RBX). Luego, se hace un shift a la derecha el resultado de esta operación y se compara con el tercer número, guardado en R12, si no se cumple explota la bomba.
+
+
+Si esta condición es correcta, se llama a la función adicional misterio pasando como argumento el tercer número. Lo que verifica esta condición es si este número es mayor o igual a cero, en ese caso explota. Es decir, el tercer número debe ser estrictamente negativo. Si todo esto es correcto, pasa a la siguiente fase.
+
+
+
+
+CONTRASEÑA 2: -1 5 -3
+
+
+________________
+
+
+
+
+FASE 3
+
+
+La rutina Phase_3 espera una cadena con dos elementos: una palabra y un número. Utiliza sscanf para extraer ambos valores, luego carga el archivo palabras.txt que contiene una lista de palabras (mediante la función readlines), y finalmente llama a una función auxiliar (cuenta) que simula una búsqueda binaria sobre ese arreglo. La validación consiste en comprobar que el número ingresado por el usuario coincida con la cantidad de pasos necesarios para encontrar la palabra en el arreglo usando dicha búsqueda. Si el contador no coincide con el número provisto, se llama a explode_bomb.
+
+
+Sin embargo, otro problema que surgía era que aunque se ingresara una palabra válida ubicada en el centro del arreglo (por ejemplo, "engringarse") y el número correcto de pasos ("1"), la bomba explotaba de todos modos. Tras analizar en detalle, se descubrió que el buffer reservado para almacenar la palabra (mediante malloc(30)) no era lo suficientemente grande para contener algunas entradas más largas. Cuando el string ingresado excede ese espacio, sobrescribía la posición de memoria donde se guardaba el número extraído por sscanf, haciendo que este se volviera incorrecto (por ejemplo, un “1” se convertía en “0”), lo que hacía fallar la validación. La solución fue ingresar una palabra más corta que no desbordara el buffer, como “atar”, permitiendo que tanto la palabra como el número se mantuvieran intactos y desactivando correctamente la fase.
+
+
+Se realizó esta búsqueda binaria sobre el archivo con un script auxiliar hecho en python. 
+
+
+CONTRASEÑA 3: atar 9
+
+
+FASE 4
+La fase 4 del programa espera una cadena de exactamente seis caracteres. En la primera parte, se invoca la función string_length para comprobar que la longitud de la entrada sea igual a 6. Luego, se recorre cada uno de los caracteres ingresados y se aplica una operación de máscara binaria (AND 0xF) para obtener únicamente los 4 bits menos significativos de cada carácter (equivalente a ord(caracter) & 0xF). Este valor se utiliza como índice en una tabla de 16 enteros ubicada en memoria (en la dirección 0x4cde20), y los valores extraídos se van acumulando en un registro.
+Al finalizar el recorrido, se compara la suma acumulada con el valor decimal 55. Si no coincide, se invoca explode_bomb, indicando que la validación falló. A pesar de encontrar múltiples combinaciones cuyos índices sumaban correctamente 55, algunas entradas válidas aparentemente causaban que la bomba explotara. Esto se debía a que la máscara 0xF no garantiza que los caracteres resultantes sean imprimibles o adecuados como input en consola, lo cual podía afectar la interpretación del string.
+Para resolverlo, se desarrolló un script en Python que probó combinaciones de caracteres visibles (string.printable) y simuló la lógica de la función para encontrar una entrada que cumpliera exactamente la condición. La clave que permitió desactivar esta fase fue 001119, cuyos caracteres, tras aplicar la máscara y consultar el arreglo, producían una suma exacta de 55. Una vez ingresada, el programa superó esta validación y avanzó sin activar la bomba.
+CONTRASEÑA 4: 001119
+
+
+FASE SECRETA
+Este fragmento corresponde a una etapa oculta del binario denominada secret_phase, la cual no se ejecuta durante el flujo normal del programa. Su activación depende de una condición oculta evaluada al final de la función phase_defused. Luego de desactivar correctamente las cuatro fases principales, el programa verifica si se ingresan tres valores adicionales utilizando sscanf con el formato "%s %d %s". Si el tercer valor ingresado es exactamente la cadena "abrete_sesamo", el programa considera la condición secreta cumplida y llama a secret_phase.
+La función secret_phase solicita un nuevo número al usuario, el cual es convertido a entero mediante strtol y validado para que esté en el rango entre 1 y 1000. Este número se pasa como argumento a la función fun7, junto con un puntero al nodo raíz (n1) de una estructura de árbol binario de búsqueda (BST). La función fun7 realiza una búsqueda recursiva en dicho árbol, retornando un valor que representa la "posición lógica" del nodo, codificada en base a un recorrido binario: al moverse a la izquierda se calcula 2 * resultado, y al ir a la derecha, 2 * resultado + 1. Si el número ingresado no se encuentra en el árbol, se retorna -1. Si se encuentra, el valor resultante se compara con 2; si no coincide, la bomba explota.
+Dado que esta fase no se ejecuta automáticamente ni siquiera al ingresar "abrete_sesamo" fuera de GDB, se determinó que su activación está bloqueada en el flujo real del programa. Sin embargo, se puede acceder manualmente a secret_phase desde un entorno de depuración como GDB invocando directamente call secret_phase() tras iniciar la ejecución. Una vez dentro, el árbol puede ser explorado inspeccionando la memoria a partir de la dirección de n1, reconstruyendo su estructura y utilizando una simulación en Python del algoritmo de fun7 para encontrar el valor que produce un retorno de 2. Este valor es la clave correcta para desactivar la fase secreta. Aunque no fue posible ejecutar esta fase en condiciones normales.
