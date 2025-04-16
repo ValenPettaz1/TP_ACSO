@@ -1,7 +1,6 @@
 #include "ej1.h"
 
 string_proc_list* string_proc_list_create(void){
-	//inicializar estructura de lista
 	string_proc_list* list = (string_proc_list*)malloc(sizeof(string_proc_list));
 	if(list == NULL){
 		fprintf(stderr, "Error: No se pudo crear la lista\n");
@@ -13,8 +12,7 @@ string_proc_list* string_proc_list_create(void){
 }
 
 string_proc_node* string_proc_node_create(uint8_t type, char* hash){
-	//Inicializa un nodo con el tipo y el hash dado.
-	//El nodo tiene que apuntar al hash pasado por parámetro (no hay que copiarlo).
+
 	string_proc_node* node = (string_proc_node*)malloc(sizeof(string_proc_node));
 	if(node == NULL){
 		fprintf(stderr, "Error: No se pudo crear el nodo\n");
@@ -30,11 +28,9 @@ string_proc_node* string_proc_node_create(uint8_t type, char* hash){
 void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash){
 	string_proc_node* node = string_proc_node_create(type, hash);
 	if(list->first == NULL){
-		// Si la lista está vacía, el primer nodo es el nuevo nodo.
 		list->first = node;
 		list->last  = node;
 	}else{
-		// Si la lista no está vacía, agregamos el nuevo nodo al final.
 		list->last->next = node;
 		node->previous = list->last;
 		list->last = node;
@@ -42,7 +38,6 @@ void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash)
 }
 
 char* string_proc_list_concat(string_proc_list* list, uint8_t type, char* prefix){
-    // Iniciar el nuevo hash con una copia del prefijo
     char* new_hash = (char*)malloc(strlen(prefix) + 1);
     if(new_hash == NULL){
         fprintf(stderr, "Error: No se pudo crear el nuevo hash\n");
@@ -63,7 +58,6 @@ char* string_proc_list_concat(string_proc_list* list, uint8_t type, char* prefix
         fprintf(stderr, "Error: No se encontraron hashes de tipo %d\n", type);
         return NULL;
     }
-    // Agregar el nuevo hash a la lista
     string_proc_list_add_node(list, type, new_hash);
     return new_hash;
 }

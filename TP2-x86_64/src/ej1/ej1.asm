@@ -2,8 +2,6 @@
 %define TRUE 1
 %define FALSE 0
 
-section .data
-
 section .text
     global string_proc_list_create_asm
     global string_proc_node_create_asm
