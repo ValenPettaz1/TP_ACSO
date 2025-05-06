@@ -8,8 +8,9 @@
 #define INODES_PER_BLOCK (DISKIMG_SECTOR_SIZE / sizeof(struct inode))
 
 int inode_iget(struct unixfilesystem *fs, int inumber, struct inode *inp) {
-    int blockNum = INODE_START_SECTOR + (inumber / INODES_PER_BLOCK);
-    int offset = inumber % INODES_PER_BLOCK;
+    int inodeIndex = inumber - 1;  // Ajuste: los inodos están numerados a partir de 1
+    int blockNum = INODE_START_SECTOR + (inodeIndex / INODES_PER_BLOCK);
+    int offset = inodeIndex % INODES_PER_BLOCK;
     char buf[DISKIMG_SECTOR_SIZE];
     int bytesRead = diskimg_readsector(fs->dfd, blockNum, buf);
     if (bytesRead == -1) {
