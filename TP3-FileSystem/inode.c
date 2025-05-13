@@ -27,8 +27,8 @@ int inode_indexlookup(struct unixfilesystem *fs, struct inode *inp, int blockNum
         return inp->i_addr[blockNum];
     }
     
-    // Caso 1: Se busca en los 7 bloques indirectos
-    if (blockNum < 7 * POINTERS_PER_BLOCK) {
+    // Caso 1: 7 bloques simple indirectos
+    if (blockNum < (int)(7 * POINTERS_PER_BLOCK)) {
         int indirectIndex = blockNum / POINTERS_PER_BLOCK;
         int offset = blockNum % POINTERS_PER_BLOCK;
         char buf[DISKIMG_SECTOR_SIZE];
@@ -38,7 +38,7 @@ int inode_indexlookup(struct unixfilesystem *fs, struct inode *inp, int blockNum
         short *indirect = (short *)buf;
         return indirect[offset];
     }
-    // Caso 2: bloque doblemente indirecto
+    // Caso 2: bloques doblemente indirecto
     else {
         int dblBlockNum = blockNum - 7 * POINTERS_PER_BLOCK;
         int indirectRow = dblBlockNum / POINTERS_PER_BLOCK;
