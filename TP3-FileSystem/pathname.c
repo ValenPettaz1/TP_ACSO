@@ -11,11 +11,11 @@ int pathname_lookup(struct unixfilesystem *fs, const char *pathname) {
     if (pathname == NULL || pathname[0] != '/') {
         return -1;
     }
-    // Si es solo la raíz, retorna el inodo 1.
+    // Si es solo la raíz, retorno el inode 1
     if (strcmp(pathname, "/") == 0) {
         return 1;
     }
-    // Copiamos pathname para poder tokenizar
+    // copio pathname para poder tokenizar
     char *pathcopy = strdup(pathname);
     if (!pathcopy) {
         return -1;
@@ -26,7 +26,7 @@ int pathname_lookup(struct unixfilesystem *fs, const char *pathname) {
     struct direntv6 entry;
     
     while (token != NULL) {
-        // Buscar el componente token en el directorio cuyo inodo es currentIno.
+        // Busco el token en el directorio cuyo inodo es currentIno.
         if (directory_findname(fs, token, currentIno, &entry) < 0) {
             free(pathcopy);
             return -1;

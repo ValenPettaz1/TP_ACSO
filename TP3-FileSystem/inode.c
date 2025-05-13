@@ -8,7 +8,7 @@
 #define INODES_PER_BLOCK (DISKIMG_SECTOR_SIZE / sizeof(struct inode))
 
 int inode_iget(struct unixfilesystem *fs, int inumber, struct inode *inp) {
-    int inodeIndex = inumber - 1;  // Ajuste: los inodos están numerados a partir de 1
+    int inodeIndex = inumber - 1;  // inodes numerados desde 1
     int blockNum = INODE_START_SECTOR + (inodeIndex / INODES_PER_BLOCK);
     int offset = inodeIndex % INODES_PER_BLOCK;
     char buf[DISKIMG_SECTOR_SIZE];
@@ -21,26 +21,13 @@ int inode_iget(struct unixfilesystem *fs, int inumber, struct inode *inp) {
     return 0;
 }
 
-/**
- * Retorna el número de bloque/sector correspondiente al enésimo bloque de datos 
- * del inodo.
- *
- * Para archivos que no son large ((i_mode & ILARG) == 0), los bloques están directamente
- * en i_addr.
- *
- * Para archivos large ((i_mode & ILARG) != 0):
- *   - i_addr[0..6] apuntan a bloques indirectos, cada uno conteniendo POINTERS_PER_BLOCK
- *     direcciones de bloques de datos.
- *   - i_addr[7] apuntan a un bloque doblemente indirecto.
- */
 int inode_indexlookup(struct unixfilesystem *fs, struct inode *inp, int blockNum) {
-    // Caso archivo no large: direcciones directas en i_addr.
+    // Caso archivo no large: direcciones directas 
     if ((inp->i_mode & ILARG) == 0) {
         return inp->i_addr[blockNum];
     }
     
-    // Archivo large
-    // Caso 1: Buscamos entre los 7 bloques indirectos
+    // Caso 1: Se busca en los 7 bloques indirectos
     if (blockNum < 7 * POINTERS_PER_BLOCK) {
         int indirectIndex = blockNum / POINTERS_PER_BLOCK;
         int offset = blockNum % POINTERS_PER_BLOCK;
@@ -51,19 +38,21 @@ int inode_indexlookup(struct unixfilesystem *fs, struct inode *inp, int blockNum
         short *indirect = (short *)buf;
         return indirect[offset];
     }
-    // Caso 2: Buscamos en el bloque doblemente indirecto
+    // Caso 2: bloque doblemente indirecto
     else {
         int dblBlockNum = blockNum - 7 * POINTERS_PER_BLOCK;
         int indirectRow = dblBlockNum / POINTERS_PER_BLOCK;
         int indirectOffset = dblBlockNum % POINTERS_PER_BLOCK;
         char buf[DISKIMG_SECTOR_SIZE];
-        // Leer el bloque doble indirecto.
+
+        //bloque doble indirecto
         if (diskimg_readsector(fs->dfd, inp->i_addr[7], buf) == -1) {
             return -1;
         }
         short *dblIndirect = (short *)buf;
         int indirectBlockNum = dblIndirect[indirectRow];
-        // Leer el bloque indirecto referido.
+
+        // bloque indirecto referido
         if (diskimg_readsector(fs->dfd, indirectBlockNum, buf) == -1) {
             return -1;
         }
