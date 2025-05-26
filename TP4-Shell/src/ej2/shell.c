@@ -12,7 +12,7 @@
 void parse_args(char *cmd, char *args[], int *arg_count) {
     *arg_count = 0;
     char *p = cmd;
-    char *start = p;  // Inicializar start aquí
+    char *start = p;
     int in_quotes = 0;
     
     // Eliminar espacios iniciales
@@ -31,7 +31,9 @@ void parse_args(char *cmd, char *args[], int *arg_count) {
             if (in_quotes) {
                 // Estamos cerrando comillas
                 *p = '\0';  // Terminamos el argumento en la comilla
-                args[(*arg_count)++] = start;
+                if (p > start) {
+                    args[(*arg_count)++] = start;
+                }
                 in_quotes = 0;
             } else {
                 // Estamos abriendo comillas
@@ -39,15 +41,18 @@ void parse_args(char *cmd, char *args[], int *arg_count) {
                 // Si hay caracteres antes de las comillas, es un argumento separado
                 if (p > start && *(p-1) != '\0') {
                     *(p) = '\0';
-                    args[(*arg_count)++] = start;
+                    if (p > start) {
+                        args[(*arg_count)++] = start;
+                    }
                 }
+                start = p + 1;  // El nuevo argumento empieza después de la comilla
             }
             p++;
             // Después de cerrar comillas, saltar espacios
             if (!in_quotes) {
                 while (*p && isspace(*p)) p++;
+                start = p;  // El nuevo argumento empieza aquí
             }
-            start = p;  // El nuevo argumento empieza aquí
         }
         // Si encontramos un espacio y no estamos dentro de comillas
         else if (isspace(*p) && !in_quotes) {
@@ -64,10 +69,15 @@ void parse_args(char *cmd, char *args[], int *arg_count) {
         else {
             p++;
             // Si llegamos al final
-            if (*p == '\0') {
+            if (*p == '\0' && start < p) {
                 args[(*arg_count)++] = start;
             }
         }
+    }
+    
+    // Si terminamos dentro de comillas, asegurarnos de incluir el último argumento
+    if (in_quotes && start < p) {
+        args[(*arg_count)++] = start;
     }
     
     args[*arg_count] = NULL;  // Terminar array con NULL para execvp
