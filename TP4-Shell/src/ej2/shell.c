@@ -3,9 +3,64 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <string.h>
+#include <ctype.h>
 
 #define MAX_COMMANDS 200
 #define MAX_ARGS 64
+
+// Función para parsear argumentos y manejar comillas
+void parse_args(char *cmd, char *args[], int *arg_count) {
+    *arg_count = 0;
+    char *p = cmd;
+    char *start;
+    int in_quotes = 0;
+    
+    // Eliminar espacios iniciales
+    while (*p && isspace(*p)) p++;
+    
+    // Mientras no lleguemos al final de la cadena
+    while (*p) {
+        // Si encontramos una comilla
+        if (*p == '"') {
+            in_quotes = !in_quotes;  // Cambiar estado de comillas
+            p++;                     // Avanzar después de la comilla
+            if (in_quotes) {
+                start = p;           // Iniciar argumento después de la comilla
+            }
+        }
+        // Si encontramos un espacio y no estamos dentro de comillas
+        else if (isspace(*p) && !in_quotes) {
+            if (p > start) {         // Si hay texto desde el inicio hasta aquí
+                *p = '\0';           // Finalizar el argumento
+                args[(*arg_count)++] = start;
+            }
+            p++;                     // Avanzar después del espacio
+            while (*p && isspace(*p)) p++; // Saltar espacios adicionales
+            start = p;               // Iniciar nuevo argumento
+        }
+        // Si encontramos el cierre de una comilla
+        else if (*p == '\0' && in_quotes) {
+            in_quotes = 0;
+            // Finalizar argumento
+            args[(*arg_count)++] = start;
+            break;
+        }
+        // Carácter normal, avanzar
+        else {
+            if (p == start && *p) {  // Si estamos en el inicio de un nuevo argumento
+                start = p;           // Marcar inicio del argumento
+            }
+            p++;                     // Avanzar al siguiente carácter
+            
+            // Si llegamos al final de la cadena
+            if (*p == '\0') {
+                args[(*arg_count)++] = start;
+            }
+        }
+    }
+    
+    args[*arg_count] = NULL;  // Terminar array con NULL para execvp
+}
 
 int main() {
 
@@ -66,17 +121,10 @@ int main() {
             char *args[MAX_ARGS];
             int arg_count = 0;
             
-            // Eliminar espacios iniciales
-            char *cmd = commands[i];
-            while (*cmd == ' ') cmd++;
-            
-            // Tokenizar por espacios para separar argumentos
-            char *arg = strtok(cmd, " ");
-            while (arg != NULL && arg_count < MAX_ARGS - 1) {
-                args[arg_count++] = arg;
-                arg = strtok(NULL, " ");
-            }
-            args[arg_count] = NULL;  // Terminar array con NULL para execvp
+            // Usar nuestra función mejorada para parsear argumentos
+            char cmd_copy[256];
+            strcpy(cmd_copy, commands[i]);  // Crear copia porque parse_args modifica la cadena
+            parse_args(cmd_copy, args, &arg_count);
             
             if (arg_count == 0) continue;
             
