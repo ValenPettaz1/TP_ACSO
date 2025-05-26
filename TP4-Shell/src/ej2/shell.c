@@ -12,47 +12,58 @@
 void parse_args(char *cmd, char *args[], int *arg_count) {
     *arg_count = 0;
     char *p = cmd;
-    char *start;
+    char *start = p;  // Inicializar start aquí
     int in_quotes = 0;
     
     // Eliminar espacios iniciales
     while (*p && isspace(*p)) p++;
+    start = p;  // Actualizar start después de saltar espacios
+    
+    // Si la cadena está vacía
+    if (*p == '\0') {
+        return;
+    }
     
     // Mientras no lleguemos al final de la cadena
     while (*p) {
         // Si encontramos una comilla
         if (*p == '"') {
-            in_quotes = !in_quotes;  // Cambiar estado de comillas
-            p++;                     // Avanzar después de la comilla
             if (in_quotes) {
-                start = p;           // Iniciar argumento después de la comilla
+                // Estamos cerrando comillas
+                *p = '\0';  // Terminamos el argumento en la comilla
+                args[(*arg_count)++] = start;
+                in_quotes = 0;
+            } else {
+                // Estamos abriendo comillas
+                in_quotes = 1;
+                // Si hay caracteres antes de las comillas, es un argumento separado
+                if (p > start && *(p-1) != '\0') {
+                    *(p) = '\0';
+                    args[(*arg_count)++] = start;
+                }
             }
+            p++;
+            // Después de cerrar comillas, saltar espacios
+            if (!in_quotes) {
+                while (*p && isspace(*p)) p++;
+            }
+            start = p;  // El nuevo argumento empieza aquí
         }
         // Si encontramos un espacio y no estamos dentro de comillas
         else if (isspace(*p) && !in_quotes) {
-            if (p > start) {         // Si hay texto desde el inicio hasta aquí
-                *p = '\0';           // Finalizar el argumento
+            *p = '\0';  // Terminar el argumento
+            if (p > start) {  // Si hay contenido
                 args[(*arg_count)++] = start;
             }
-            p++;                     // Avanzar después del espacio
-            while (*p && isspace(*p)) p++; // Saltar espacios adicionales
-            start = p;               // Iniciar nuevo argumento
-        }
-        // Si encontramos el cierre de una comilla
-        else if (*p == '\0' && in_quotes) {
-            in_quotes = 0;
-            // Finalizar argumento
-            args[(*arg_count)++] = start;
-            break;
+            p++;
+            // Saltar espacios adicionales
+            while (*p && isspace(*p)) p++;
+            start = p;  // Iniciar nuevo argumento
         }
         // Carácter normal, avanzar
         else {
-            if (p == start && *p) {  // Si estamos en el inicio de un nuevo argumento
-                start = p;           // Marcar inicio del argumento
-            }
-            p++;                     // Avanzar al siguiente carácter
-            
-            // Si llegamos al final de la cadena
+            p++;
+            // Si llegamos al final
             if (*p == '\0') {
                 args[(*arg_count)++] = start;
             }
@@ -63,7 +74,6 @@ void parse_args(char *cmd, char *args[], int *arg_count) {
 }
 
 int main() {
-
     char command[256];
     char *commands[MAX_COMMANDS];
     int command_count = 0;
@@ -72,13 +82,7 @@ int main() {
     {
         printf("Shell> ");
         
-        /*Reads a line of input from the user from the standard input (stdin) and stores it in the variable command */
         fgets(command, sizeof(command), stdin);
-        
-        /* Removes the newline character (\n) from the end of the string stored in command, if present. 
-           This is done by replacing the newline character with the null character ('\0').
-           The strcspn() function returns the length of the initial segment of command that consists of 
-           characters not in the string specified in the second argument ("\n" in this case). */
         command[strcspn(command, "\n")] = '\0';
         
         // Verificar si el usuario quiere salir
@@ -89,11 +93,7 @@ int main() {
         // Reiniciar el contador de comandos
         command_count = 0;
         
-        /* Tokenizes the command string using the pipe character (|) as a delimiter using the strtok() function. 
-           Each resulting token is stored in the commands[] array. 
-           The strtok() function breaks the command string into tokens (substrings) separated by the pipe character |. 
-           In each iteration of the while loop, strtok() returns the next token found in command. 
-           The tokens are stored in the commands[] array, and command_count is incremented to keep track of the number of tokens found. */
+        // Separar comandos por pipe
         char *token = strtok(command, "|");
         while (token != NULL) 
         {
@@ -105,7 +105,7 @@ int main() {
             continue;  // Si no hay comandos, continuar
         }
 
-        // Crear los pipes necesarios (uno menos que el número de comandos)
+        // Crear los pipes necesarios
         int pipes[MAX_COMMANDS - 1][2];
         for (int i = 0; i < command_count - 1; i++) {
             if (pipe(pipes[i]) == -1) {
