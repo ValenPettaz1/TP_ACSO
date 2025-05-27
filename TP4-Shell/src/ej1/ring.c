@@ -124,7 +124,7 @@ int main(int argc, char **argv)
     
     // Esperar a que todos los hijos terminen
     for (int i = 0; i < n; i++) {
-        wait(&status);
+        wait(&status); //ver waitpid
     }
     
     return 0;
