@@ -33,7 +33,7 @@ int main(int argc, char **argv)
     int pipes[n][2];
     pid_t child_pids[n]; // Array para almacenar los PIDs de los hijos
     
-    // Inicializar array de PIDs
+    // inicializo array de PIDs
     for (int i = 0; i < n; i++) {
         child_pids[i] = 0;
     }
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
     
     father = getpid();
     
-    // Crear los procesos hijos
+    // lanzo los procesos hijos
     for (int i = 1; i <= n; i++) {
         pid_t p = fork();
         
@@ -64,8 +64,8 @@ int main(int argc, char **argv)
         }
         
         if (p == 0) {
-            // Código del proceso hijo
-            // Cerrar todos los pipes que este proceso no usará
+            // proceso hijo
+            // cierro todos los pipes que este proceso no usará
             for (int j = 0; j < n; j++) {
                 if (j != (i-1)) { // No es el pipe de entrada
                     close(pipes[j][0]);
@@ -75,7 +75,7 @@ int main(int argc, char **argv)
                 }
             }
             
-            // Manejar pipe especial para el proceso inicial
+            // pipe especial para el proceso inicial
             if (i != start) {
                 close(parent_pipe[0]);
                 close(parent_pipe[1]);
@@ -94,14 +94,14 @@ int main(int argc, char **argv)
                 read(pipes[i-1][0], &msg, sizeof(int));
             }
             
-            // Incrementar el mensaje
+            // incrementa el mensaje
             msg++;
             printf("Proceso %d (PID: %d) incrementó el mensaje a: %d\n", i, getpid(), msg);
             
-            // Enviar al siguiente proceso en el anillo
+            // envia al siguiente proceso en el anillo
             write(pipes[i % n][1], &msg, sizeof(int));
             
-            // Si es el proceso inicial, recibe el mensaje después de dar la vuelta completa
+            // verifico si es el proceso inicial
             if (i == start) {
                 // Leer mensaje que ha completado el ciclo
                 read(pipes[i-1][0], &msg, sizeof(int));
@@ -111,14 +111,14 @@ int main(int argc, char **argv)
                 printf("Resultado final: %d\n", msg);
             }
             
-            // Cerrar los pipes restantes
+            // cierro los pipes restantes
             close(pipes[i-1][0]);
             close(pipes[i % n][1]);
             
-            exit(0); // Terminar el proceso hijo
+            exit(0); // Termina el proceso hijo
         } else {
-            // Código del proceso padre
-            child_pids[i-1] = p; // Guardar el PID del hijo creado
+            // codigo para el proceso padre
+            child_pids[i-1] = p; // guarda el PID del hijo creado
         }
     }
     
@@ -127,7 +127,6 @@ int main(int argc, char **argv)
         printf("Soy un hijo con PID %d, mi padre es: %d\n", getpid(), getppid());
     } else {
         // Código exclusivo del proceso padre
-        
         // Cerrar todos los pipes del anillo
         for (int i = 0; i < n; i++) {
             close(pipes[i][0]);
