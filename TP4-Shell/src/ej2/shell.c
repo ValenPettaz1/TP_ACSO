@@ -193,18 +193,6 @@ int main() {
                 perror("Error en waitpid");
                 continue;
             }
-            
-            // información sobre la terminación del proceso hijo
-            if (WIFEXITED(status)) {
-                printf("Proceso hijo %d terminó con código %d\n", 
-                       child, WEXITSTATUS(status));
-            } else if (WIFSIGNALED(status)) {
-                printf("Proceso hijo %d terminado por señal %d\n", 
-                       child, WTERMSIG(status));
-            } else {
-                printf("Proceso hijo %d terminó por circunstancias desconocidas\n", 
-                       child);
-            }
         }
     }
     
