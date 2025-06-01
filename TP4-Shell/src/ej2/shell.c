@@ -73,7 +73,7 @@ void parse_args(char *cmd, char *args[], int *arg_count) {
         }
     }
     
-    // Si terminamos dentro de comillas, asegurarnos de incluir el último argumento
+    // si termina dentro de comillas
     if (in_quotes && start < p) {
         args[(*arg_count)++] = start;
     }
@@ -84,7 +84,6 @@ void parse_args(char *cmd, char *args[], int *arg_count) {
 int main() {
     char command[256];
     char *commands[MAX_COMMANDS];
-    int command_count = 0;
 
     while (1) 
     {
@@ -99,7 +98,7 @@ int main() {
         }
 
         // se reinicia el contador de comandos
-        command_count = 0;
+        int command_count = 0;
         
         // separo comandos por pipe
         char *token = strtok(command, "|");
@@ -122,67 +121,91 @@ int main() {
             }
         }
         
-        // Ejecutar cada comando en un proceso hijo
-        pid_t pids[MAX_COMMANDS];
+        // array para almacenar los PIDs de los procesos hijos
+        pid_t child_pids[MAX_COMMANDS] = {0};
+        
+        // ejecuto cada comando en un proceso hijo
         for (int i = 0; i < command_count; i++) {
-            // Parsear el comando en programa y argumentos
+            // parsing
             char *args[MAX_ARGS];
             int arg_count = 0;
-            
-            // Usar nuestra función mejorada para parsear argumentos
             char cmd_copy[256];
-            strcpy(cmd_copy, commands[i]);  // Crear copia porque parse_args modifica la cadena
+            strcpy(cmd_copy, commands[i]);  // creo copia porque parse_args modifica el str
             parse_args(cmd_copy, args, &arg_count);
             
             if (arg_count == 0) continue;
             
-            // Crear proceso hijo
-            pids[i] = fork();
+            // lanzo proceso hijo
+            pid_t pid = fork();
             
-            if (pids[i] < 0) {
+            if (pid < 0) {
                 perror("Error en fork");
                 exit(EXIT_FAILURE);
             }
             
-            if (pids[i] == 0) {  // Código del proceso hijo
-                // Configurar redirección de entrada (si no es el primer comando)
+            if (pid == 0) {  // Estoy en el proceso hijo
+                // redirección de entrada (si no es el primer comando)
                 if (i > 0) {
-                    dup2(pipes[i-1][0], STDIN_FILENO);
+                    if (dup2(pipes[i-1][0], STDIN_FILENO) == -1) {
+                        perror("Error en dup2 para stdin");
+                        exit(EXIT_FAILURE);
+                    }
                 }
                 
-                // Configurar redirección de salida (si no es el último comando)
+                // redirección de salida (si no es el último comando)
                 if (i < command_count - 1) {
-                    dup2(pipes[i][1], STDOUT_FILENO);
+                    if (dup2(pipes[i][1], STDOUT_FILENO) == -1) {
+                        perror("Error en dup2 para stdout");
+                        exit(EXIT_FAILURE);
+                    }
                 }
                 
-                // Cerrar todos los descriptores de archivo de pipes
+                // cierrp todos los descriptores de archivo de pipes
                 for (int j = 0; j < command_count - 1; j++) {
                     close(pipes[j][0]);
                     close(pipes[j][1]);
                 }
                 
-                // Ejecutar el comando
+                // ejecuto
                 execvp(args[0], args);
                 
-                // Si llegamos aquí, execvp falló
+                // si llega a esto execvp falló
                 fprintf(stderr, "Error al ejecutar: %s\n", args[0]);
                 exit(EXIT_FAILURE);
+            } else {
+                // Código del proceso padre
+                child_pids[i] = pid;  // guardo el PID del hijo
             }
         }
         
-        // Cerrar todos los pipes en el proceso padre
+        // cierro todos los pipes en el proceso padre
         for (int i = 0; i < command_count - 1; i++) {
             close(pipes[i][0]);
             close(pipes[i][1]);
         }
         
-        // Esperar a que todos los procesos hijo terminen
+        // espero a que todos los procesos hijo terminen
         for (int i = 0; i < command_count; i++) {
-            waitpid(pids[i], NULL, 0);
+            int status;
+            pid_t child = waitpid(child_pids[i], &status, 0);
+            
+            if (child == -1) {
+                perror("Error en waitpid");
+                continue;
+            }
+            
+            // información sobre la terminación del proceso hijo
+            if (WIFEXITED(status)) {
+                printf("Proceso hijo %d terminó con código %d\n", 
+                       child, WEXITSTATUS(status));
+            } else if (WIFSIGNALED(status)) {
+                printf("Proceso hijo %d terminado por señal %d\n", 
+                       child, WTERMSIG(status));
+            } else {
+                printf("Proceso hijo %d terminó por circunstancias desconocidas\n", 
+                       child);
+            }
         }
-        
-        // Reiniciar para el próximo comando
-        command_count = 0;
     }
     
     return 0;
