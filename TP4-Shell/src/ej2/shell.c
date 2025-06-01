@@ -15,28 +15,26 @@ void parse_args(char *cmd, char *args[], int *arg_count) {
     char *start = p;
     int in_quotes = 0;
     
-    // Eliminar espacios iniciales
+    // elimina espacios iniciales
     while (*p && isspace(*p)) p++;
-    start = p;  // Actualizar start después de saltar espacios
+    start = p;  // actualizo start después de saltar espacios
     
-    // Si la cadena está vacía
+    // si la cadena está vacía
     if (*p == '\0') {
         return;
     }
     
-    // Mientras no lleguemos al final de la cadena
     while (*p) {
-        // Si encontramos una comilla
         if (*p == '"') {
             if (in_quotes) {
-                // Estamos cerrando comillas
+                // cerramdp las comillas
                 *p = '\0';  // Terminamos el argumento en la comilla
                 if (p > start) {
                     args[(*arg_count)++] = start;
                 }
                 in_quotes = 0;
             } else {
-                // Estamos abriendo comillas
+                // abriendo las comillas
                 in_quotes = 1;
                 // Si hay caracteres antes de las comillas, es un argumento separado
                 if (p > start && *(p-1) != '\0') {
@@ -45,27 +43,27 @@ void parse_args(char *cmd, char *args[], int *arg_count) {
                         args[(*arg_count)++] = start;
                     }
                 }
-                start = p + 1;  // El nuevo argumento empieza después de la comilla
+                start = p + 1;  // nuevo argumento empieza después de la comilla
             }
             p++;
-            // Después de cerrar comillas, saltar espacios
+            // despues de cerrar comillas, saltar espacios
             if (!in_quotes) {
                 while (*p && isspace(*p)) p++;
-                start = p;  // El nuevo argumento empieza aquí
+                start = p;  
             }
         }
-        // Si encontramos un espacio y no estamos dentro de comillas
+        // caso con un espacio y no estamos dentro de comillas
         else if (isspace(*p) && !in_quotes) {
-            *p = '\0';  // Terminar el argumento
-            if (p > start) {  // Si hay contenido
+            *p = '\0';  // terminar el argumento
+            if (p > start) {  // si hay contenido
                 args[(*arg_count)++] = start;
             }
             p++;
-            // Saltar espacios adicionales
+            // Salto espacios adicionales
             while (*p && isspace(*p)) p++;
-            start = p;  // Iniciar nuevo argumento
+            start = p; 
         }
-        // Carácter normal, avanzar
+        // caso entrada normal, avanzo
         else {
             p++;
             // Si llegamos al final
@@ -80,7 +78,7 @@ void parse_args(char *cmd, char *args[], int *arg_count) {
         args[(*arg_count)++] = start;
     }
     
-    args[*arg_count] = NULL;  // Terminar array con NULL para execvp
+    args[*arg_count] = NULL;  // termino array con NULL para execvp
 }
 
 int main() {
@@ -95,15 +93,15 @@ int main() {
         fgets(command, sizeof(command), stdin);
         command[strcspn(command, "\n")] = '\0';
         
-        // Verificar si el usuario quiere salir
+        // si el usuario quiere salir
         if (strcmp(command, "exit") == 0) {
             break;
         }
 
-        // Reiniciar el contador de comandos
+        // se reinicia el contador de comandos
         command_count = 0;
         
-        // Separar comandos por pipe
+        // separo comandos por pipe
         char *token = strtok(command, "|");
         while (token != NULL) 
         {
@@ -112,10 +110,10 @@ int main() {
         }
 
         if (command_count == 0) {
-            continue;  // Si no hay comandos, continuar
+            continue;  
         }
 
-        // Crear los pipes necesarios
+        // se crean los pipes
         int pipes[MAX_COMMANDS - 1][2];
         for (int i = 0; i < command_count - 1; i++) {
             if (pipe(pipes[i]) == -1) {

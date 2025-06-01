@@ -85,12 +85,12 @@ int main(int argc, char **argv)
             
             int msg;
             
-            // Si es el proceso inicial, recibe del padre primero
+            // ssi es el proceso inicial, recibe del padre primero
             if (i == start) {
                 read(parent_pipe[0], &msg, sizeof(int));
                 close(parent_pipe[0]);
             } else {
-                // Los demás procesos reciben del proceso anterior
+                // los demas procesos reciben del proceso anterior
                 read(pipes[i-1][0], &msg, sizeof(int));
             }
             
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
                 read(pipes[i-1][0], &msg, sizeof(int));
                 printf("Proceso inicial %d (PID: %d) recibió el mensaje final: %d\n", i, getpid(), msg);
                 
-                // Mostrar el resultado final y salir
+                // mostrar el resultado final y salir
                 printf("Resultado final: %d\n", msg);
             }
             
@@ -122,23 +122,23 @@ int main(int argc, char **argv)
         }
     }
     
-    // Verificación de proceso padre
+    // verificacion de proceso padre
     if (father != getpid()) {
         printf("Soy un hijo con PID %d, mi padre es: %d\n", getpid(), getppid());
     } else {
-        // Código exclusivo del proceso padre
-        // Cerrar todos los pipes del anillo
+        // codigo exclusivo del proceso padre
+        // cierro todos los pipes del anillo
         for (int i = 0; i < n; i++) {
             close(pipes[i][0]);
             close(pipes[i][1]);
         }
         
-        // Enviar mensaje inicial al proceso que inicia
+        // envio mensaje inicial al proceso que inicia
         close(parent_pipe[0]);
         write(parent_pipe[1], buffer, sizeof(int));
         close(parent_pipe[1]);
         
-        // Esperar a que todos los hijos terminen
+        // espero a que todos los hijos terminen
         for (int i = 0; i < n; i++) {
             pid_t ch = waitpid(child_pids[i], &status, 0);
             
