@@ -4,22 +4,22 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-
 int main(int argc, char **argv)
 {	
-    int start, status, pid, n;
+    int start, status, n;
     int buffer[1];
+    pid_t father = 0;
 
     if (argc != 4){ printf("Uso: anillo <n> <c> <s> \n"); exit(0);}
     
     /* Parsing of arguments */
-      n = atoi(argv[1]);         // Número de procesos en el anillo
+    n = atoi(argv[1]);         // Número de procesos en el anillo
     buffer[0] = atoi(argv[2]); // Valor inicial del mensaje
     start = atoi(argv[3]);     // Proceso que inicia la comunicación
     
     printf("Se crearán %i procesos, se enviará el caracter %i desde proceso %i \n", n, buffer[0], start);
     
-    // Validar argumentos
+    // valido argumentos
     if (n < 3) {
         printf("Error: Se necesitan al menos 3 procesos para formar un anillo\n");
         exit(1);
@@ -29,8 +29,15 @@ int main(int argc, char **argv)
         exit(1);
     }
     
-    // Crear pipes para la comunicación en anillo
+    // creo los pipes
     int pipes[n][2];
+    pid_t child_pids[n]; // Array para almacenar los PIDs de los hijos
+    
+    // Inicializar array de PIDs
+    for (int i = 0; i < n; i++) {
+        child_pids[i] = 0;
+    }
+    
     for (int i = 0; i < n; i++) {
         if (pipe(pipes[i]) == -1) {
             perror("Error al crear pipe");
@@ -38,23 +45,26 @@ int main(int argc, char **argv)
         }
     }
     
-    // Pipe para comunicación entre padre y proceso inicial
+    // pipe entre padre y proceso inicial
     int parent_pipe[2];
     if (pipe(parent_pipe) == -1) {
         perror("Error al crear pipe para padre");
         exit(1);
     }
     
+    father = getpid();
+    
     // Crear los procesos hijos
     for (int i = 1; i <= n; i++) {
-        pid = fork();
+        pid_t p = fork();
         
-        if (pid < 0) {
+        if (p < 0) {
             perror("Error al crear proceso hijo");
             exit(1);
         }
         
-        if (pid == 0) { // Código del proceso hijo
+        if (p == 0) {
+            // Código del proceso hijo
             // Cerrar todos los pipes que este proceso no usará
             for (int j = 0; j < n; j++) {
                 if (j != (i-1)) { // No es el pipe de entrada
@@ -86,7 +96,7 @@ int main(int argc, char **argv)
             
             // Incrementar el mensaje
             msg++;
-            printf("Proceso %d incrementó el mensaje a: %d\n", i, msg);
+            printf("Proceso %d (PID: %d) incrementó el mensaje a: %d\n", i, getpid(), msg);
             
             // Enviar al siguiente proceso en el anillo
             write(pipes[i % n][1], &msg, sizeof(int));
@@ -95,7 +105,7 @@ int main(int argc, char **argv)
             if (i == start) {
                 // Leer mensaje que ha completado el ciclo
                 read(pipes[i-1][0], &msg, sizeof(int));
-                printf("Proceso inicial %d recibió el mensaje final: %d\n", i, msg);
+                printf("Proceso inicial %d (PID: %d) recibió el mensaje final: %d\n", i, getpid(), msg);
                 
                 // Mostrar el resultado final y salir
                 printf("Resultado final: %d\n", msg);
@@ -105,26 +115,38 @@ int main(int argc, char **argv)
             close(pipes[i-1][0]);
             close(pipes[i % n][1]);
             
-            exit(0);
+            exit(0); // Terminar el proceso hijo
+        } else {
+            // Código del proceso padre
+            child_pids[i-1] = p; // Guardar el PID del hijo creado
         }
     }
     
-    // Código del proceso padre
-    
-    // Cerrar todos los pipes del anillo
-    for (int i = 0; i < n; i++) {
-        close(pipes[i][0]);
-        close(pipes[i][1]);
-    }
-    
-    // Enviar mensaje inicial al proceso que inicia
-    close(parent_pipe[0]);
-    write(parent_pipe[1], buffer, sizeof(int));
-    close(parent_pipe[1]);
-    
-    // Esperar a que todos los hijos terminen
-    for (int i = 0; i < n; i++) {
-        wait(&status); //ver waitpid
+    // Verificación de proceso padre
+    if (father != getpid()) {
+        printf("Soy un hijo con PID %d, mi padre es: %d\n", getpid(), getppid());
+    } else {
+        // Código exclusivo del proceso padre
+        
+        // Cerrar todos los pipes del anillo
+        for (int i = 0; i < n; i++) {
+            close(pipes[i][0]);
+            close(pipes[i][1]);
+        }
+        
+        // Enviar mensaje inicial al proceso que inicia
+        close(parent_pipe[0]);
+        write(parent_pipe[1], buffer, sizeof(int));
+        close(parent_pipe[1]);
+        
+        // Esperar a que todos los hijos terminen
+        for (int i = 0; i < n; i++) {
+            pid_t ch = waitpid(child_pids[i], &status, 0);
+            
+            if (ch == -1) {
+                perror("Error en waitpid");
+            }
+        }
     }
     
     return 0;
